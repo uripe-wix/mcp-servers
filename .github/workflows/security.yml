@@ -16,8 +16,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Install pipx and mcp-scan
+        run: |
+          python3 -m pip install --upgrade pipx
+          pipx ensurepath
+          pipx install mcp-scan
+
       - name: Run MCP Scan
-        run: pipx run uv mcp-scan@latest --storage-file results.json
+        run: mcp-scan --storage-file results.json
 
       - name: Fail on High Findings
         run: |
