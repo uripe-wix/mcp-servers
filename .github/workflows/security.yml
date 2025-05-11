@@ -1,17 +1,28 @@
 # .github/workflows/security.yml
-name: MCP security
 
-on: [push, pull_request, schedule]
-schedule:
-  - cron: "0 3 * * *"   # nightly drift scan
+name: MCP Security
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 3 * * *"  # nightly drift scan at 3:00 AM UTC
 
 jobs:
   scan:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - run: pipx run uv mcp-scan@latest --storage-file results.json
-      - name: Fail on Highs
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run MCP Scan
+        run: pipx run uv mcp-scan@latest --storage-file results.json
+
+      - name: Fail on High Findings
         run: |
           HIGH=$(jq '.summary.high' results.json)
-          [ "$HIGH" -eq 0 ] || { echo "$HIGH high findings"; exit 1; }
+          if [ "$HIGH" -ne 0 ]; then
+            echo "$HIGH high findings"
+            exit 1
+          fi
