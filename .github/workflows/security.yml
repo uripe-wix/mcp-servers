@@ -23,7 +23,7 @@ jobs:
           pipx install mcp-scan
 
       - name: Run MCP Scan
-        run: mcp-scan scan ./mcp-servers --storage-file results.json
+        run: mcp-scan scan ./mcp-servers/. --storage-file results.json
 
       - name: Fail on High Findings
         run: |
