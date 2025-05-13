@@ -1,0 +1,38 @@
+name: GitHub Scan MCP Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  start-mcp-server:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Logout from ghcr.io (ensure clean state)
+        run: docker logout ghcr.io || true
+
+      - name: Pull MCP server image
+        run: docker pull ghcr.io/github/github-mcp-server:latest
+
+      - name: Run MCP server container
+        run: |
+          docker run -d \
+            --name mcp-server \
+            -p 8080:8080 \
+            ghcr.io/github/github-mcp-server:latest
+
+      - name: Wait for MCP server to be up (optional)
+        run: |
+          for i in {1..10}; do
+            if curl -sSf http://localhost:8080/healthz; then
+              echo "MCP server is up";
+              exit 0;
+            fi
+            echo "Waiting for MCP server..."
+            sleep 3
+          done
+          echo "MCP server did not start in time"
+          exit 1
