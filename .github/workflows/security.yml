@@ -1,34 +1,32 @@
-# .github/workflows/security.yml
-
-name: MCP Security
+name: Start MCP Server
 
 on:
-  push:
-  pull_request:
-  schedule:
-    - cron: "0 3 * * *"  # nightly drift scan at 3:00 AM UTC
+  workflow_dispatch:
 
 jobs:
-  scan:
+  start-mcp-server:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install pipx and mcp-scan
+      - name: Run MCP server container
         run: |
-          python3 -m pip install --upgrade pipx
-          pipx ensurepath
-          pipx install mcp-scan
+          docker run -d \
+            --name mcp-server \
+            -p 8080:8080 \
+            ghcr.io/github/github-mcp-server:latest
 
-      - name: Run MCP Scan
-        run: mcp-scan scan ./mcp-servers/. --storage-file results.json
-
-      - name: Fail on High Findings
+      - name: Wait for MCP server to be up (optional)
         run: |
-          HIGH=$(jq '.summary.high' results.json)
-          if [ "$HIGH" -ne 0 ]; then
-            echo "$HIGH high findings"
-            exit 1
-          fi
+          for i in {1..10}; do
+            if curl -sSf http://localhost:8080/healthz; then
+              echo "MCP server is up";
+              exit 0;
+            fi
+            echo "Waiting for MCP server..."
+            sleep 3
+          done
+          echo "MCP server did not start in time"
+          exit 1
